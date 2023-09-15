@@ -1,14 +1,31 @@
+const exp = require('constants');
+const express = require('express');
 const fs = require('fs');
-const inquirer = require('inquirer');
 const qr = require('qr-image');
+const bodyParser = require('body-parser');
+const app = express();
+const PORT = process.env.PORT || 3000
 
-inquirer.prompt([
-    {
-        message: "Enter your URL",
-        name: 'URL'
+app.set('view engine', 'ejs');
+app.set('views', 'views');
+app.use(express.static('./public'))
+app.use(bodyParser.urlencoded({extended: false}));
+
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+app.post('/generate', async (req, res) => {
+    try{
+        const url = await req.body.url;
+        var qr_svg = qr.image(url);
+        qr_svg.pipe(fs.createWriteStream('./public/output.png'));
+        res.render('output');
+    }catch(error){
+        console.error(error.message)
     }
-]).then(answers => {
-    const url = answers.URL;
-    var qr_svg = qr.image(url);
-    qr_svg.pipe(fs.createWriteStream('output.png'));
 })
+
+app.listen(PORT, () => {
+    console.log(`Server now live at port: ${PORT}`);
+});
